@@ -60,7 +60,7 @@ pub fn setup(mut commands: Commands, mut meshes: ResMut<Assets<Mesh>>) {
 }
 
 #[derive(Component, Deref)]
-struct InstanceMaterialData(Vec<InstanceData>);
+pub struct InstanceMaterialData(pub Vec<InstanceData>);
 
 impl ExtractComponent for InstanceMaterialData {
     type Query = &'static InstanceMaterialData;
@@ -96,10 +96,10 @@ impl Plugin for CustomMaterialPlugin {
 
 #[derive(Clone, Copy, Pod, Zeroable)]
 #[repr(C)]
-struct InstanceData {
-    position: Vec3,
-    scale: f32,
-    color: [f32; 4],
+pub struct InstanceData {
+    pub position: Vec3,
+    pub scale: f32,
+    pub color: [f32; 4],
 }
 
 #[allow(clippy::too_many_arguments)]
