@@ -32,23 +32,28 @@ mod tests {
 
     #[test]
     fn cell_next() {
+        // 4-5/4/6/N
         let rule = Rule {
             survival: vec![4..6],
-            states: 6,
             birth: vec![4..5],
+            states: 6,
             neighbors: Neighbors::Neumann,
         };
         let c = CellStatus::Alive;
+        // stays alive at 4 or 5
         let c = c.next_state(&rule, 4);
         assert_eq!(c, CellStatus::Alive);
         let c = c.next_state(&rule, 5);
         assert_eq!(c, CellStatus::Alive);
         {
+            // starts dying at 3
             let c = c.next_state(&rule, 3);
             assert_eq!(c, CellStatus::Dying { health: 4 });
         }
+        // ... or at 6
         let c = c.next_state(&rule, 6);
         assert_eq!(c, CellStatus::Dying { health: 4 });
+        // once it starts dying, it won't stop
         let c = c.next_state(&rule, 4);
         assert_eq!(c, CellStatus::Dying { health: 3 });
         let c = c.next_state(&rule, 4);
@@ -61,6 +66,7 @@ mod tests {
         assert_eq!(c, CellStatus::Dead);
         let c = c.next_state(&rule, 5);
         assert_eq!(c, CellStatus::Dead);
+        // comes back at 4
         let c = c.next_state(&rule, 4);
         assert_eq!(c, CellStatus::Alive);
     }
