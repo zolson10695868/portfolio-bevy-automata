@@ -1,29 +1,11 @@
-use crate::cell::CellStatus;
+use crate::{
+    cell::CellStatus,
+    rule::{Neighbors, Rule},
+};
 use enum_map::{enum_map, Enum, EnumMap};
 use itertools::iproduct;
 use std::{iter, ops::Range};
 use strum::{EnumIter, IntoEnumIterator};
-
-struct Grid(Vec<Vec<Vec<CellStatus>>>);
-
-impl Grid {
-    fn new(size: usize) -> Self {
-        Self(vec![vec![vec![CellStatus::Dead; size]; size]; size])
-    }
-}
-
-struct Rule {
-    survival: Vec<Range<u8>>,
-    birth: Vec<Range<u8>>,
-    states: u8,
-    neighbors: Neighbors,
-}
-
-#[derive(Debug, Clone, Copy)]
-enum Neighbors {
-    Moore,
-    Neumann,
-}
 
 macro_rules! point {
     ($x:expr, $y:expr, $z:expr) => {
@@ -33,6 +15,52 @@ macro_rules! point {
             Dim::Z => $z
         })
     };
+}
+
+struct Grid(Vec<Vec<Vec<CellStatus>>>);
+
+impl Grid {
+    pub fn new(size: usize) -> Self {
+        Self(vec![vec![vec![CellStatus::Dead; size]; size]; size])
+    }
+
+    fn next_as_point(&self, p: &Point, rule: &Rule) -> CellStatus {
+        let count = p
+            .neighbors(&rule.neighbors)
+            .into_iter()
+            .filter(|p| self.get(p).is_some_and(|c| c.is_live()))
+            .count();
+        self.get(p).unwrap().next_state(rule, count)
+    }
+
+    fn len(&self) -> usize {
+        self.0.len()
+    }
+
+    fn points(&self) -> impl Iterator<Item = Point> {
+        let l = self.len();
+        iproduct!(0..l, 0..l, 0..l).map(|(x, y, z)| point!(x, y, z))
+    }
+
+    fn get(&self, p: &Point) -> Option<&CellStatus> {
+        self.0.get(p.0[Dim::X])?.get(p.0[Dim::Y])?.get(p.0[Dim::Z])
+    }
+
+    fn get_mut(&mut self, p: &Point) -> Option<&mut CellStatus> {
+        self.0
+            .get_mut(p.0[Dim::X])?
+            .get_mut(p.0[Dim::Y])?
+            .get_mut(p.0[Dim::Z])
+    }
+
+    fn count_live(&self, it: impl IntoIterator<Item = Point>) -> usize {
+        it.into_iter()
+            .filter(|p| match self.get(&p).unwrap() {
+                CellStatus::Alive | CellStatus::Dying { .. } => true,
+                _ => false,
+            })
+            .count()
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
