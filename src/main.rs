@@ -1,4 +1,7 @@
+mod cell;
+mod grid;
 mod rendering;
+
 use bevy::prelude::*;
 use rendering::*;
 
