@@ -51,6 +51,9 @@ fn draw_window(
     mut rule_str: Local<String>,
     mut ev: EventWriter<GridReset>,
 ) {
+    if rule_str.is_empty() {
+        *rule_str = "4/4/5/M".into();
+    }
     egui::Window::new("Settings")
         .resizable(false)
         .show(contexts.ctx_mut(), |ui| {
