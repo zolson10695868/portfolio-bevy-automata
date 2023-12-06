@@ -11,6 +11,7 @@ use bevy::{
     tasks::{block_on, AsyncComputeTaskPool, Task},
     window::close_on_esc,
 };
+use bevy_egui::{egui, EguiContexts, EguiPlugin};
 use grid::{Grid, MainGrid};
 use rendering::*;
 use rule::{Neighbors, Rule};
@@ -30,13 +31,37 @@ fn main() {
             Duration::from_millis(200),
             TimerMode::Repeating,
         )))
-        .add_plugins((DefaultPlugins, CustomMaterialPlugin))
+        .add_event::<GridReset>()
+        .add_plugins((DefaultPlugins, CustomMaterialPlugin, EguiPlugin))
         .add_systems(Startup, create_grid)
         //.add_systems(Startup, setup)
         //.add_systems(Update, (move_cubes, color_cubes))
         .add_systems(Update, (update_grid, render_grid_data, rotate_g))
         .add_systems(Update, close_on_esc)
+        .add_systems(Update, draw_window)
         .run();
+}
+
+#[derive(Event)]
+struct GridReset;
+
+fn draw_window(
+    mut contexts: EguiContexts,
+    mut rule: ResMut<Rule>,
+    mut rule_str: Local<String>,
+    mut ev: EventWriter<GridReset>,
+) {
+    egui::Window::new("Settings")
+        .resizable(false)
+        .show(contexts.ctx_mut(), |ui| {
+            ui.label("Rule");
+            ui.text_edit_singleline(&mut *rule_str);
+            if ui.button("Restart").clicked() {
+                let r = rule_str.parse::<Rule>().unwrap();
+                *rule = r;
+                ev.send(GridReset);
+            }
+        });
 }
 
 fn rotate_g(mut g: Query<&mut Transform, With<MainGrid>>) {
@@ -67,10 +92,15 @@ fn update_grid(
     time: Res<Time>,
     mut timer: ResMut<GridTimer>,
     mut task: Local<Option<Task<Grid>>>,
+    mut ev: EventReader<GridReset>,
 ) {
     let Ok(mut g) = g.get_single_mut() else {
         return;
     };
+    if ev.read().next().is_some() {
+        *g = Grid::new_noise(g.len());
+        task.take().map(drop);
+    }
     if timer.0.tick(time.delta()).finished() {
         if let Some(next) = task.take().map(block_on) {
             *g = next;
