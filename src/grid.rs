@@ -19,6 +19,23 @@ macro_rules! point {
     };
 }
 
+#[derive(Resource)]
+pub struct NoiseSettings {
+    pub seed: u32,
+    pub threshold: f64,
+    pub size: u8,
+}
+
+impl Default for NoiseSettings {
+    fn default() -> Self {
+        Self {
+            seed: 1,
+            threshold: 0.1,
+            size: 10,
+        }
+    }
+}
+
 #[derive(Component, Clone)]
 pub struct Grid(Vec<Vec<Vec<CellStatus>>>);
 
@@ -30,17 +47,17 @@ impl Grid {
         Self(vec![vec![vec![CellStatus::Dead; size]; size]; size])
     }
 
-    pub fn new_noise(size: usize) -> Self {
-        let noise = OpenSimplex::new(1);
+    pub fn new_noise(size: usize, n: &NoiseSettings) -> Self {
+        let noise = OpenSimplex::new(n.seed);
         let mut g = Self::new(size);
         let p = g.points().collect::<Vec<_>>();
         let center = {
             let mid = g.len() / 2;
             point!(mid, mid, mid)
         };
-        for p in p.into_iter().filter(|x| x.dist(&center) < 10.) {
+        for p in p.into_iter().filter(|x| x.dist(&center) < n.size as f32) {
             let val = noise.get([p.0[Dim::X] as f64, p.0[Dim::Y] as f64, p.0[Dim::Z] as f64]);
-            *g.get_mut(&p).unwrap() = if val > 0.1 {
+            *g.get_mut(&p).unwrap() = if val > n.threshold {
                 CellStatus::Alive
             } else {
                 CellStatus::Dead

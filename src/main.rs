@@ -17,7 +17,7 @@ use bevy_egui::{
     egui::{self, Color32, RichText},
     EguiContexts, EguiPlugin,
 };
-use grid::{Grid, MainGrid};
+use grid::{Grid, MainGrid, NoiseSettings};
 use rendering::*;
 use rule::{Neighbors, Rule};
 
@@ -31,6 +31,11 @@ fn main() {
             birth: vec![4..5],
             states: 5,
             neighbors: Neighbors::Moore,
+        })
+        .insert_resource(NoiseSettings {
+            seed: 1,
+            threshold: 0.1,
+            size: 10,
         })
         .insert_resource(GridTimer(Timer::new(
             Duration::from_millis(200),
@@ -54,6 +59,7 @@ fn draw_window(
     mut rule_str: Local<String>,
     mut ev: EventWriter<GridReset>,
     mut err_str: Local<String>,
+    mut n: ResMut<NoiseSettings>,
 ) {
     if rule_str.is_empty() {
         *rule_str = "4/4/5/M".into();
@@ -64,6 +70,12 @@ fn draw_window(
             ui.label("Rule");
             ui.text_edit_singleline(&mut *rule_str);
             ui.label(RichText::new(&*err_str).color(Color32::RED));
+            ui.label("Seed");
+            ui.add(egui::Slider::new(&mut n.seed, 0..=u32::MAX));
+            ui.label("Treshold");
+            ui.add(egui::Slider::new(&mut n.threshold, -1. ..=1.));
+            ui.label("Core size");
+            ui.add(egui::Slider::new(&mut n.size, 1..=100));
             if ui.button("Restart").clicked() {
                 match rule_str.parse::<Rule>() {
                     Ok(r) => {
@@ -86,9 +98,13 @@ fn rotate_g(mut g: Query<&mut Transform, With<MainGrid>>) {
     g.rotate_y(0.02);
 }
 
-fn create_grid(mut commands: Commands, mut meshes: ResMut<Assets<Mesh>>) {
+fn create_grid(
+    mut commands: Commands,
+    mut meshes: ResMut<Assets<Mesh>>,
+    noise: Res<NoiseSettings>,
+) {
     commands.spawn((
-        Grid::new_noise(50),
+        Grid::new_noise(50, &noise),
         MainGrid,
         SpatialBundle::INHERITED_IDENTITY,
         meshes.add(Mesh::from(shape::Cube { size: 0.8 })),
@@ -108,12 +124,13 @@ fn update_grid(
     mut timer: ResMut<GridTimer>,
     mut task: Local<Option<Task<Grid>>>,
     mut ev: EventReader<GridReset>,
+    n: Res<NoiseSettings>,
 ) {
     let Ok(mut g) = g.get_single_mut() else {
         return;
     };
     if ev.read().next().is_some() {
-        *g = Grid::new_noise(g.len());
+        *g = Grid::new_noise(g.len(), &n);
         task.take().map(|t| block_on(t.cancel()));
     }
     if timer.0.tick(time.delta()).finished() {

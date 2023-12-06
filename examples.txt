@@ -1,0 +1,4 @@
+4-5/4-5/15/M
+seed: 1
+threshold: 0.1
+core size: 5
