@@ -1,3 +1,5 @@
+#![allow(clippy::single_range_in_vec_init)]
+
 mod cell;
 mod grid;
 mod rendering;
@@ -112,13 +114,13 @@ fn update_grid(
     };
     if ev.read().next().is_some() {
         *g = Grid::new_noise(g.len());
-        task.take().map(drop);
+        task.take().map(|t| block_on(t.cancel()));
     }
     if timer.0.tick(time.delta()).finished() {
         if let Some(next) = task.take().map(block_on) {
             *g = next;
         };
-        let _ = task.insert({
+        *task = Some({
             let pool = AsyncComputeTaskPool::get();
             let g = g.clone();
             let rule = rule.clone();

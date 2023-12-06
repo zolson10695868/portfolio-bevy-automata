@@ -64,7 +64,6 @@ mod parser {
         fn parser() -> impl Parser<char, Rule, Error = Simple<char>> {
             let single_num = text::int(10).map(|s: String| s.parse::<u8>().unwrap());
             let range = single_num
-                .clone()
                 .then(just("-").ignore_then(single_num).or_not())
                 .map(|(low, high)| low..(high.unwrap_or(low) + 1));
             let ranges_rule = range.separated_by(just(','));
@@ -73,7 +72,6 @@ mod parser {
                 just('N').to(Neighbors::Neumann),
             ));
             ranges_rule
-                .clone()
                 .separated_by(just('/'))
                 .exactly(2)
                 .then_ignore(just('/'))

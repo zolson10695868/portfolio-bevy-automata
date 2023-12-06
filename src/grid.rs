@@ -59,8 +59,7 @@ impl Grid {
     }
 
     pub fn iter(&self) -> impl Iterator<Item = (Point, CellStatus)> + '_ {
-        self.points()
-            .map(|p| (p.clone(), self.get(&p).unwrap().clone()))
+        self.points().map(|p| (p.clone(), *self.get(&p).unwrap()))
     }
 
     fn next_as_point(&self, p: &Point, rule: &Rule) -> CellStatus {
