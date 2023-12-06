@@ -223,7 +223,4 @@ mod tests {
             ]
         )
     }
-
-    #[test]
-    fn grid_successor() {}
 }
