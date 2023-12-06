@@ -66,18 +66,19 @@ fn update_grid(
     mut timer: ResMut<GridTimer>,
     mut task: Local<Option<Task<Grid>>>,
 ) {
+    let Ok(mut g) = g.get_single_mut() else {
+        return;
+    };
     if timer.0.tick(time.delta()).finished() {
-        for mut g in g.iter_mut() {
-            if let Some(next) = task.take().map(block_on) {
-                *g = next;
-            };
-            let _ = task.insert({
-                let pool = AsyncComputeTaskPool::get();
-                let g = g.clone();
-                let rule = rule.clone();
-                pool.spawn(async move { g.next(&rule) })
-            });
-        }
+        if let Some(next) = task.take().map(block_on) {
+            *g = next;
+        };
+        let _ = task.insert({
+            let pool = AsyncComputeTaskPool::get();
+            let g = g.clone();
+            let rule = rule.clone();
+            pool.spawn(async move { g.next(&rule) })
+        });
     }
 }
 
