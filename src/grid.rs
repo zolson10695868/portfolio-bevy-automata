@@ -2,8 +2,10 @@ use crate::{
     cell::CellStatus,
     rule::{Neighbors, Rule},
 };
+use bevy::prelude::*;
 use enum_map::{enum_map, Enum, EnumMap};
 use itertools::iproduct;
+use noise::{NoiseFn, OpenSimplex};
 use std::{iter, ops::Range};
 use strum::{EnumIter, IntoEnumIterator};
 
@@ -17,23 +19,60 @@ macro_rules! point {
     };
 }
 
-struct Grid(Vec<Vec<Vec<CellStatus>>>);
+#[derive(Component, Clone)]
+pub struct Grid(Vec<Vec<Vec<CellStatus>>>);
+
+#[derive(Component)]
+pub struct MainGrid;
 
 impl Grid {
     pub fn new(size: usize) -> Self {
         Self(vec![vec![vec![CellStatus::Dead; size]; size]; size])
     }
 
+    pub fn new_noise(size: usize) -> Self {
+        let noise = OpenSimplex::new(1);
+        let mut g = Self::new(size);
+        let p = g.points().collect::<Vec<_>>();
+        let center = {
+            let mid = g.len() / 2;
+            point!(mid, mid, mid)
+        };
+        for p in p.into_iter().filter(|x| x.dist(&center) < 10.) {
+            let val = noise.get([p.0[Dim::X] as f64, p.0[Dim::Y] as f64, p.0[Dim::Z] as f64]);
+            *g.get_mut(&p).unwrap() = if val > 0.1 {
+                CellStatus::Alive
+            } else {
+                CellStatus::Dead
+            };
+        }
+        g
+    }
+
+    pub fn next(&self, rule: &Rule) -> Grid {
+        let mut next = Self::new(self.len());
+        self.points().for_each(|p| {
+            let nc = self.next_as_point(&p, rule);
+            *next.get_mut(&p).unwrap() = nc;
+        });
+        next
+    }
+
+    pub fn iter(&self) -> impl Iterator<Item = (Point, CellStatus)> + '_ {
+        self.points()
+            .map(|p| (p.clone(), self.get(&p).unwrap().clone()))
+    }
+
     fn next_as_point(&self, p: &Point, rule: &Rule) -> CellStatus {
         let count = p
             .neighbors(&rule.neighbors)
             .into_iter()
-            .filter(|p| self.get(p).is_some_and(|c| c.is_live()))
+            .filter(|p| self.get(p) == Some(&CellStatus::Alive))
             .count();
         self.get(p).unwrap().next_state(rule, count)
     }
 
-    fn len(&self) -> usize {
+    pub fn len(&self) -> usize {
         self.0.len()
     }
 
@@ -64,9 +103,22 @@ impl Grid {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-struct Point(EnumMap<Dim, usize>);
+pub struct Point(EnumMap<Dim, usize>);
+
+impl From<Point> for Vec3 {
+    fn from(value: Point) -> Self {
+        Self::new(
+            value.0[Dim::X] as f32,
+            value.0[Dim::Y] as f32,
+            value.0[Dim::Z] as f32,
+        )
+    }
+}
 
 impl Point {
+    fn dist(&self, other: &Self) -> f32 {
+        Vec3::from(self.clone()).distance(Vec3::from(other.clone()))
+    }
     fn neighbors(&self, n: &Neighbors) -> Vec<Self> {
         match n {
             Neighbors::Moore => iproduct!(-1isize..=1, -1isize..=1, -1isize..=1)
@@ -171,4 +223,7 @@ mod tests {
             ]
         )
     }
+
+    #[test]
+    fn grid_successor() {}
 }

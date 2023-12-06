@@ -1,7 +1,10 @@
 use std::ops::Range;
 
+use bevy::prelude::Resource;
+
 use crate::cell::CellStatus;
 
+#[derive(Resource, Clone)]
 pub struct Rule {
     pub survival: Vec<Range<u8>>,
     pub birth: Vec<Range<u8>>,

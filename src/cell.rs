@@ -1,3 +1,5 @@
+use bevy::prelude::Color;
+
 use crate::rule::Rule;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -21,6 +23,14 @@ impl CellStatus {
 
     pub fn is_live(&self) -> bool {
         matches!(self, Self::Alive | Self::Dying { .. })
+    }
+
+    pub fn color(&self) -> Color {
+        match self {
+            Self::Dead => Color::rgba(0., 0., 0., 0.),
+            Self::Alive => Color::WHITE,
+            _ => Color::GRAY,
+        }
     }
 }
 
