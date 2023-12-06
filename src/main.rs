@@ -11,7 +11,10 @@ use bevy::{
     tasks::{block_on, AsyncComputeTaskPool, Task},
     window::close_on_esc,
 };
-use bevy_egui::{egui, EguiContexts, EguiPlugin};
+use bevy_egui::{
+    egui::{self, Color32, RichText},
+    EguiContexts, EguiPlugin,
+};
 use grid::{Grid, MainGrid};
 use rendering::*;
 use rule::{Neighbors, Rule};
@@ -50,6 +53,7 @@ fn draw_window(
     mut rule: ResMut<Rule>,
     mut rule_str: Local<String>,
     mut ev: EventWriter<GridReset>,
+    mut err_str: Local<String>,
 ) {
     if rule_str.is_empty() {
         *rule_str = "4/4/5/M".into();
@@ -59,10 +63,18 @@ fn draw_window(
         .show(contexts.ctx_mut(), |ui| {
             ui.label("Rule");
             ui.text_edit_singleline(&mut *rule_str);
+            ui.label(RichText::new(&*err_str).color(Color32::RED));
             if ui.button("Restart").clicked() {
-                let r = rule_str.parse::<Rule>().unwrap();
-                *rule = r;
-                ev.send(GridReset);
+                match rule_str.parse::<Rule>() {
+                    Ok(r) => {
+                        *rule = r;
+                        err_str.clear();
+                        ev.send(GridReset);
+                    }
+                    Err(e) => {
+                        *err_str = e.to_string();
+                    }
+                }
             }
         });
 }
