@@ -68,23 +68,15 @@ fn update_grid(
 ) {
     if timer.0.tick(time.delta()).finished() {
         for mut g in g.iter_mut() {
-            if task.is_none() {
-                let _ = task.insert({
-                    let pool = AsyncComputeTaskPool::get();
-                    let g = g.clone();
-                    let rule = rule.clone();
-                    pool.spawn(async move { g.next(&rule) })
-                });
-            } else {
-                let next = task.take().map(block_on).unwrap();
+            if let Some(next) = task.take().map(block_on) {
                 *g = next;
-                let _ = task.insert({
-                    let pool = AsyncComputeTaskPool::get();
-                    let g = g.clone();
-                    let rule = rule.clone();
-                    pool.spawn(async move { g.next(&rule) })
-                });
-            }
+            };
+            let _ = task.insert({
+                let pool = AsyncComputeTaskPool::get();
+                let g = g.clone();
+                let rule = rule.clone();
+                pool.spawn(async move { g.next(&rule) })
+            });
         }
     }
 }
@@ -94,16 +86,15 @@ fn render_grid_data(mut g: Query<(&mut InstanceMaterialData, &Grid)>) {
         *dat = InstanceMaterialData(
             g.iter()
                 .filter_map(|(p, c)| {
-                    if !c.is_live() {
-                        return None;
-                    }
-                    let p = Vec3::from(p)
-                        - Vec3::new(g.len() as f32, g.len() as f32, g.len() as f32) / 2.;
-                    let c = c.color();
-                    Some(InstanceData {
-                        position: p,
-                        scale: 1.,
-                        color: c.into(),
+                    c.is_live().then(|| {
+                        let p = Vec3::from(p)
+                            - Vec3::new(g.len() as f32, g.len() as f32, g.len() as f32) / 2.;
+                        let c = c.color();
+                        InstanceData {
+                            position: p,
+                            scale: 1.,
+                            color: c.into(),
+                        }
                     })
                 })
                 .collect(),
