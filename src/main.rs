@@ -70,12 +70,13 @@ fn draw_window(
             ui.label("Rule");
             ui.text_edit_singleline(&mut *rule_str);
             ui.label(RichText::new(&*err_str).color(Color32::RED));
-            ui.label("Seed");
-            ui.add(egui::Slider::new(&mut n.seed, 0..=u32::MAX));
-            ui.label("Treshold");
-            ui.add(egui::Slider::new(&mut n.threshold, -1. ..=1.));
-            ui.label("Core size");
-            ui.add(egui::Slider::new(&mut n.size, 1..=100));
+            ui.add(
+                egui::Slider::new(&mut n.seed, 0..=u32::MAX)
+                    .text("Seed")
+                    .drag_value_speed(100.),
+            );
+            ui.add(egui::Slider::new(&mut n.threshold, -1. ..=1.).text("Threshold"));
+            ui.add(egui::Slider::new(&mut n.size, 1..=50).text("Core Size"));
             if ui.button("Restart").clicked() {
                 match rule_str.parse::<Rule>() {
                     Ok(r) => {
