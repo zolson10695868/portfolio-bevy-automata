@@ -16,10 +16,6 @@ impl Rule {
         rule_contains(count, &self.survival)
     }
 
-    pub fn first_dying_state(&self) -> u8 {
-        self.states - 2
-    }
-
     pub fn passes_birth(&self, count: usize) -> bool {
         let count = count as u8;
         rule_contains(count, &self.birth)
@@ -50,7 +46,7 @@ mod parser {
     use super::{Neighbors, Rule};
     use chumsky::{
         prelude::Simple,
-        primitive::{choice, just, todo},
+        primitive::{choice, just},
         text, Parser,
     };
 

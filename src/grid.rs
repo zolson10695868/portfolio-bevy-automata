@@ -6,7 +6,7 @@ use bevy::prelude::*;
 use enum_map::{enum_map, Enum, EnumMap};
 use itertools::iproduct;
 use noise::{NoiseFn, OpenSimplex};
-use std::{iter, ops::Range};
+use std::iter;
 use strum::{EnumIter, IntoEnumIterator};
 
 macro_rules! point {
@@ -90,15 +90,6 @@ impl Grid {
             .get_mut(p.0[Dim::X])?
             .get_mut(p.0[Dim::Y])?
             .get_mut(p.0[Dim::Z])
-    }
-
-    fn count_live(&self, it: impl IntoIterator<Item = Point>) -> usize {
-        it.into_iter()
-            .filter(|p| match self.get(&p).unwrap() {
-                CellStatus::Alive | CellStatus::Dying { .. } => true,
-                _ => false,
-            })
-            .count()
     }
 }
 

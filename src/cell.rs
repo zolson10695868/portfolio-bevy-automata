@@ -1,6 +1,5 @@
-use bevy::prelude::{Color, Vec4};
-
 use crate::rule::Rule;
+use bevy::prelude::Color;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum CellStatus {
@@ -25,6 +24,7 @@ impl CellStatus {
         matches!(self, Self::Alive | Self::Dying { .. })
     }
 
+    #[allow(dead_code)]
     pub fn color(&self) -> Color {
         match self {
             Self::Dead => Color::rgba(0., 0., 0., 0.),
