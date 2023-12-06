@@ -9,6 +9,7 @@ use bevy::{
     prelude::*,
     render::view::NoFrustumCulling,
     tasks::{block_on, AsyncComputeTaskPool, Task},
+    window::close_on_esc,
 };
 use grid::{Grid, MainGrid};
 use rendering::*;
@@ -26,7 +27,7 @@ fn main() {
             neighbors: Neighbors::Moore,
         })
         .insert_resource(GridTimer(Timer::new(
-            Duration::from_millis(500),
+            Duration::from_millis(200),
             TimerMode::Repeating,
         )))
         .add_plugins((DefaultPlugins, CustomMaterialPlugin))
@@ -34,6 +35,7 @@ fn main() {
         //.add_systems(Startup, setup)
         //.add_systems(Update, (move_cubes, color_cubes))
         .add_systems(Update, (update_grid, render_grid_data, rotate_g))
+        .add_systems(Update, close_on_esc)
         .run();
 }
 
@@ -49,12 +51,12 @@ fn create_grid(mut commands: Commands, mut meshes: ResMut<Assets<Mesh>>) {
         Grid::new_noise(50),
         MainGrid,
         SpatialBundle::INHERITED_IDENTITY,
-        meshes.add(Mesh::from(shape::Cube { size: 0.5 })),
+        meshes.add(Mesh::from(shape::Cube { size: 0.8 })),
         NoFrustumCulling,
         InstanceMaterialData(vec![]),
     ));
     commands.spawn(Camera3dBundle {
-        transform: Transform::from_xyz(0.0, 9.0, 100.0).looking_at(Vec3::ZERO, Vec3::Y),
+        transform: Transform::from_xyz(0.0, 9.0, 90.0).looking_at(Vec3::ZERO, Vec3::Y),
         ..default()
     });
 }
