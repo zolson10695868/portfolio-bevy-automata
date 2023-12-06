@@ -1,4 +1,4 @@
-use bevy::prelude::Color;
+use bevy::prelude::{Color, Vec4};
 
 use crate::rule::Rule;
 
@@ -30,6 +30,23 @@ impl CellStatus {
             Self::Dead => Color::rgba(0., 0., 0., 0.),
             Self::Alive => Color::WHITE,
             _ => Color::GRAY,
+        }
+    }
+
+    pub fn color_grad(&self, states: &u8) -> Color {
+        const C1: Color = Color::hsl(359.9, 1., 0.5);
+        const C2: Color = Color::hsl(300., 1., 0.);
+        match self {
+            Self::Dead => C2,
+            Self::Alive => C1,
+            Self::Dying { health } => {
+                let h1 = C1.h();
+                let h2 = C2.h();
+                let weight = *health as f32 / *states as f32;
+                let l = weight / 2.;
+                let h = (1. - weight) * h1 + weight * h2;
+                Color::hsl(h, 1., l)
+            }
         }
     }
 }

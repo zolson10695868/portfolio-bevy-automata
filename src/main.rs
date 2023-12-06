@@ -81,7 +81,7 @@ fn update_grid(
     }
 }
 
-fn render_grid_data(mut g: Query<(&mut InstanceMaterialData, &Grid)>) {
+fn render_grid_data(mut g: Query<(&mut InstanceMaterialData, &Grid)>, rule: Res<Rule>) {
     for (mut dat, g) in g.iter_mut() {
         *dat = InstanceMaterialData(
             g.iter()
@@ -89,7 +89,7 @@ fn render_grid_data(mut g: Query<(&mut InstanceMaterialData, &Grid)>) {
                     c.is_live().then(|| {
                         let p = Vec3::from(p)
                             - Vec3::new(g.len() as f32, g.len() as f32, g.len() as f32) / 2.;
-                        let c = c.color();
+                        let c = c.color_grad(&rule.states);
                         InstanceData {
                             position: p,
                             scale: 1.,
